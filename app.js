@@ -4,7 +4,7 @@ if (window.pdfjsLib) {
 }
 
 // Global Application State
-let baseCanvas = document.createElement('canvas'); // Offscreen cache of pristine PDF render
+let baseCanvas = document.createElement('canvas'); // Offscreen pristine PDF render
 let baseCtx = baseCanvas.getContext('2d');
 let currentPdfScale = 2.0; // High DPI scale factor
 let pdfDoc = null;
@@ -36,7 +36,6 @@ const syncCreatedDate = document.getElementById('syncCreatedDate');
 const createdDatePreview = document.getElementById('createdDatePreview');
 
 const paymentAmountInput = document.getElementById('paymentAmount');
-const referenceInput = document.getElementById('referenceInput');
 
 // Buttons
 const btnRideToday = document.getElementById('btnRideToday');
@@ -45,7 +44,6 @@ const btnToggleManualText = document.getElementById('btnToggleManualText');
 const btnBackToQuick = document.getElementById('btnBackToQuick');
 const btnTransferNow = document.getElementById('btnTransferNow');
 const btnResetAmount = document.getElementById('btnResetAmount');
-const btnGenReference = document.getElementById('btnGenReference');
 
 const btnUpload = document.getElementById('btnUpload');
 const uploadInput = document.getElementById('uploadInput');
@@ -74,7 +72,7 @@ if (tabFormBtn && tabPreviewBtn) {
     tabFormBtn.classList.remove('active');
     appContainer.classList.remove('show-form');
     appContainer.classList.add('show-preview');
-    setTimeout(fitCanvas, 50);
+    setTimeout(fitCanvas, 60);
   });
 }
 
@@ -86,21 +84,27 @@ function showToast(message, isSuccess = true) {
   setTimeout(() => toastEl.classList.remove('show'), 2600);
 }
 
-// Formatting helpers
-function padZero(n) {
-  return String(n).padStart(2, '0');
-}
-
-function getFormattedDate(d = new Date()) {
-  return `${padZero(d.getDate())}.${padZero(d.getMonth() + 1)}.${d.getFullYear()}`;
-}
-
-function getFormattedTime(d = new Date(), withSeconds = false) {
-  let str = `${padZero(d.getHours())}:${padZero(d.getMinutes())}`;
-  if (withSeconds) {
-    str += `:${padZero(d.getSeconds())}`;
-  }
-  return str;
+// Moscow Timezone (MSK / UTC+3) Helper
+function getMoscowNow() {
+  const formatter = new Intl.DateTimeFormat('ru-RU', {
+    timeZone: 'Europe/Moscow',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  });
+  const parts = formatter.formatToParts(new Date());
+  const m = {};
+  parts.forEach(p => m[p.type] = p.value);
+  return {
+    dateStr: `${m.day}.${m.month}.${m.year}`,
+    timeShortStr: `${m.hour}:${m.minute}`,
+    timeFullStr: `${m.hour}:${m.minute}:${m.second}`,
+    fullTransferStr: `${m.day}.${m.month}.${m.year} ${m.hour}:${m.minute}:${m.second} мск`
+  };
 }
 
 // Compute Created Date (+4 mins from transfer date)
@@ -118,7 +122,8 @@ function computeCreatedDate(transferDateStr) {
     const dateObj = new Date(year, month, day, hours, minutes, seconds);
     dateObj.setMinutes(dateObj.getMinutes() + 4);
 
-    return `${padZero(dateObj.getDate())}.${padZero(dateObj.getMonth() + 1)}.${dateObj.getFullYear()} ${padZero(dateObj.getHours())}:${padZero(dateObj.getMinutes())} мск`;
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${pad(dateObj.getDate())}.${pad(dateObj.getMonth() + 1)}.${dateObj.getFullYear()} ${pad(dateObj.getHours())}:${pad(dateObj.getMinutes())} мск`;
   }
   return transferDateStr.replace(/:\d{2}\s+мск/, ' мск');
 }
@@ -192,14 +197,18 @@ async function loadPdfDocument(source) {
 function draw() {
   if (!baseCanvas.width || !baseCanvas.height) return;
 
-  // 1. Draw cached clean PDF base
+  // 1. Draw pristine original PDF base
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.drawImage(baseCanvas, 0, 0);
 
   const S = currentPdfScale; // 2.0
-  const fontFam = "Tahoma, 'Segoe UI', Arial, sans-serif";
+  // Clean cross-platform font (SF Pro on iOS, Roboto on Android, Segoe UI on Windows)
+  const fontFam = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
 
-  // 1. Назначение платежа
+  // -----------------------------------------------------------------
+  // 1. НАЗНАЧЕНИЕ ПЛАТЕЖА
+  // Аккуратная закраска ТОЛЬКО двух строк текста поездки (не задевая Референс!)
+  // -----------------------------------------------------------------
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(33 * S, 296 * S, 260 * S, 34 * S);
 
@@ -228,7 +237,9 @@ function draw() {
   if (rideLines[0]) ctx.fillText(rideLines[0], startX, line1Y);
   if (rideLines[1]) ctx.fillText(rideLines[1], startX, line2Y);
 
-  // 2. Дата отправки перевода
+  // -----------------------------------------------------------------
+  // 2. ДАТА ОТПРАВКИ ПЕРЕВОДА
+  // -----------------------------------------------------------------
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(302 * S, 168 * S, 180 * S, 15 * S);
 
@@ -237,7 +248,9 @@ function draw() {
   ctx.font = `${12 * S}px ${fontFam}`;
   ctx.fillText(transferText, 304.75 * S, (841.9 - 664.288) * S);
 
-  // 3. Сформирована (дата вверху справа)
+  // -----------------------------------------------------------------
+  // 3. СФОРМИРОВАНА (дата вверху справа)
+  // -----------------------------------------------------------------
   if (syncCreatedDate.checked) {
     const createdText = computeCreatedDate(transferText);
     ctx.fillStyle = '#ffffff';
@@ -248,7 +261,9 @@ function draw() {
     ctx.fillText(createdText, 452.79 * S, (841.9 - 779.15) * S);
   }
 
-  // 4. Сумма платежа (по умолчанию 40 RUR)
+  // -----------------------------------------------------------------
+  // 4. СУММА ПЛАТЕЖА (по умолчанию 40 RUR)
+  // -----------------------------------------------------------------
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(33 * S, 211 * S, 100 * S, 14 * S);
 
@@ -258,19 +273,13 @@ function draw() {
   ctx.font = `${12 * S}px ${fontFam}`;
   ctx.fillText(amountText, 35.45 * S, (841.9 - 621.394) * S);
 
-  // 5. Референс
-  const refText = referenceInput.value.trim();
-  if (refText) {
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(33 * S, 267 * S, 230 * S, 14 * S);
-
-    ctx.fillStyle = '#000000';
-    ctx.font = `${12 * S}px ${fontFam}`;
-    ctx.fillText(refText, 35.45 * S, (841.9 - 477.112) * S);
-  }
+  // -----------------------------------------------------------------
+  // ВАЖНО: РЕФЕРЕНС ОСТАЕТСЯ ОРИГИНАЛЬНЫМ ИЗ PDF!
+  // Никаких белых плашек поверх референса — он всегда четкий и виден!
+  // -----------------------------------------------------------------
 }
 
-// Listeners
+// Listeners for live typing
 [rideDateInput, rideTimeInput, busNumberInput].forEach(el => {
   el.addEventListener('input', () => {
     updateRideText();
@@ -294,21 +303,22 @@ syncCreatedDate.addEventListener('change', () => {
 });
 
 paymentAmountInput.addEventListener('input', draw);
-referenceInput.addEventListener('input', draw);
 
-// Quick Buttons
+// Quick Buttons with Moscow Time
 btnRideToday.addEventListener('click', () => {
-  rideDateInput.value = getFormattedDate();
+  const msk = getMoscowNow();
+  rideDateInput.value = msk.dateStr;
   updateRideText();
   draw();
-  showToast('Дата поездки: сегодня');
+  showToast(`Дата поездки: ${msk.dateStr} (МСК)`);
 });
 
 btnRideNow.addEventListener('click', () => {
-  rideTimeInput.value = getFormattedTime();
+  const msk = getMoscowNow();
+  rideTimeInput.value = msk.timeShortStr;
   updateRideText();
   draw();
-  showToast('Время поездки: сейчас');
+  showToast(`Время поездки: ${msk.timeShortStr} (МСК)`);
 });
 
 btnToggleManualText.addEventListener('click', () => {
@@ -329,30 +339,17 @@ btnBackToQuick.addEventListener('click', () => {
 });
 
 btnTransferNow.addEventListener('click', () => {
-  const now = new Date();
-  const dateStr = getFormattedDate(now);
-  const timeStr = getFormattedTime(now, true);
-  transferDateInput.value = `${dateStr} ${timeStr} мск`;
+  const msk = getMoscowNow();
+  transferDateInput.value = msk.fullTransferStr;
   updateCreatedPreview();
   draw();
-  showToast('Время отправки перевода: сейчас');
+  showToast(`Время перевода: ${msk.timeFullStr} (МСК)`);
 });
 
 btnResetAmount.addEventListener('click', () => {
   paymentAmountInput.value = '40';
   draw();
   showToast('Сумма: 40 RUR');
-});
-
-btnGenReference.addEventListener('click', () => {
-  const chars = '0123456789ABCDEF';
-  let rand = 'A624';
-  for (let i = 0; i < 27; i++) {
-    rand += chars[Math.floor(Math.random() * chars.length)];
-  }
-  referenceInput.value = rand;
-  draw();
-  showToast('Новый референс сгенерирован');
 });
 
 // Upload
@@ -400,7 +397,6 @@ btnReset.addEventListener('click', () => {
     syncCreatedDate.checked = true;
 
     paymentAmountInput.value = '40';
-    referenceInput.value = 'A6241085323513140B10080011840301';
 
     updateRideText();
     updateCreatedPreview();

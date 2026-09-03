@@ -35,7 +35,7 @@
     </div>
   </header>
 
-  <!-- Mobile Segmented Tabs (Visible only on phone/tablet) -->
+  <!-- Mobile Segmented Tabs -->
   <div class="mobile-tab-bar">
     <nav class="tab-nav">
       <button class="tab-btn active" id="tabFormBtn">
@@ -47,14 +47,14 @@
     </nav>
   </div>
 
-  <!-- Main Container (shows Form by default on mobile) -->
+  <!-- Main Container -->
   <div class="app-container show-form" id="appContainer">
 
     <!-- Left Controls Panel -->
     <aside class="sidebar" id="sidebarPanel">
       <div class="sidebar-header">
         <h2>Параметры квитанции</h2>
-        <span class="card-badge">PDF Оригинал</span>
+        <span class="card-badge">МСК (UTC+3)</span>
       </div>
 
       <div class="fields-scroll">
@@ -73,7 +73,7 @@
                 <input type="text" id="rideDate" class="form-control" value="29.08.2026" placeholder="ДД.ММ.ГГГГ" inputmode="numeric">
               </div>
               <div class="input-row">
-                <label>Время:</label>
+                <label>Время (МСК):</label>
                 <input type="text" id="rideTime" class="form-control" value="14:53" placeholder="ЧЧ:ММ">
               </div>
               <div class="input-row">
@@ -83,8 +83,8 @@
             </div>
 
             <div class="quick-btn-group">
-              <button type="button" class="btn-pill" id="btnRideToday">📅 Сегодня</button>
-              <button type="button" class="btn-pill" id="btnRideNow">⏰ Сейчас</button>
+              <button type="button" class="btn-pill" id="btnRideToday">📅 Сегодня (МСК)</button>
+              <button type="button" class="btn-pill" id="btnRideNow">⏰ Сейчас (МСК)</button>
               <button type="button" class="btn-pill" id="btnToggleManualText">✏️ Вручную</button>
             </div>
           </div>
@@ -107,22 +107,22 @@
         <div class="form-card">
           <div class="card-title">
             <span>📅 Дата отправки перевода</span>
-            <span class="card-badge">СБП</span>
+            <span class="card-badge">МСК (UTC+3)</span>
           </div>
 
           <div class="input-row">
-            <label>Дата и время отправки (с секундами):</label>
+            <label>Дата и время отправки (по Москве):</label>
             <input type="text" id="transferDate" class="form-control" value="29.08.2026 11:53:21 мск">
           </div>
 
           <div class="quick-btn-group">
-            <button type="button" class="btn-pill" id="btnTransferNow">⏱️ Поставить текущее время</button>
+            <button type="button" class="btn-pill" id="btnTransferNow">⏱️ Текущее время (МСК)</button>
           </div>
 
           <div style="margin-top: 10px; display: flex; align-items: center; gap: 8px;">
             <input type="checkbox" id="syncCreatedDate" checked style="cursor: pointer; width: 18px; height: 18px;">
             <label for="syncCreatedDate" style="font-size: 12px; color: var(--text-muted); cursor: pointer;">
-              Обновлять «Сформирована» вверху (+4 мин)
+              Обновлять «Сформирована» вверху (+4 мин МСК)
             </label>
           </div>
           <div id="createdDatePreview" style="font-size: 11px; color: #64748b; margin-top: 4px;">
@@ -150,19 +150,6 @@
 
           <div class="quick-btn-group">
             <button type="button" class="btn-pill" id="btnResetAmount">🔄 Сбросить на 40 RUR</button>
-          </div>
-        </div>
-
-        <!-- 4. Референс -->
-        <div class="form-card">
-          <div class="card-title">
-            <span>🔢 Референс операции</span>
-          </div>
-          <div class="input-row">
-            <input type="text" id="referenceInput" class="form-control" value="A6241085323513140B10080011840301" style="font-size: 12px;">
-          </div>
-          <div class="quick-btn-group">
-            <button type="button" class="btn-pill" id="btnGenReference">🎲 Сгенерировать новый</button>
           </div>
         </div>
 

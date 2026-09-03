@@ -61,7 +61,17 @@ function showToast(message, isSuccess = true) {
   setTimeout(() => toastEl.classList.remove('show'), 2600);
 }
 
-// Moscow Timezone (MSK / UTC+3) Helper
+// 1. Local Device Time Helper (for actual bus ride)
+function getLocalNow() {
+  const now = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  return {
+    dateStr: `${pad(now.getDate())}.${pad(now.getMonth() + 1)}.${now.getFullYear()}`,
+    timeShortStr: `${pad(now.getHours())}:${pad(now.getMinutes())}`
+  };
+}
+
+// 2. Moscow Timezone (MSK / UTC+3) Helper (for bank transfer stamp)
 function getMoscowNow() {
   const formatter = new Intl.DateTimeFormat('ru-RU', {
     timeZone: 'Europe/Moscow',
@@ -285,21 +295,21 @@ syncCreatedDate.addEventListener('change', () => {
 
 paymentAmountInput.addEventListener('input', draw);
 
-// Quick Buttons with Moscow Time
+// Кнопки Назначения платежа (ВАШЕ МЕСТНОЕ ВРЕМЯ)
 btnRideToday.addEventListener('click', () => {
-  const msk = getMoscowNow();
-  rideDateInput.value = msk.dateStr;
+  const local = getLocalNow();
+  rideDateInput.value = local.dateStr;
   updateRideText();
   draw();
-  showToast(`Дата поездки: ${msk.dateStr} (МСК)`);
+  showToast(`Дата поездки: ${local.dateStr} (местная)`);
 });
 
 btnRideNow.addEventListener('click', () => {
-  const msk = getMoscowNow();
-  rideTimeInput.value = msk.timeShortStr;
+  const local = getLocalNow();
+  rideTimeInput.value = local.timeShortStr;
   updateRideText();
   draw();
-  showToast(`Время поездки: ${msk.timeShortStr} (МСК)`);
+  showToast(`Время поездки: ${local.timeShortStr} (местное)`);
 });
 
 btnToggleManualText.addEventListener('click', () => {
@@ -319,6 +329,7 @@ btnBackToQuick.addEventListener('click', () => {
   draw();
 });
 
+// Кнопка Даты перевода (МОСКОВСКОЕ ВРЕМЯ МСК)
 btnTransferNow.addEventListener('click', () => {
   const msk = getMoscowNow();
   transferDateInput.value = msk.fullTransferStr;
@@ -440,7 +451,7 @@ btnCopyImage.addEventListener('click', () => {
   }, 'image/png');
 });
 
-// Clean Zoom Controls
+// Zoom Controls
 function setZoom(factor) {
   currentZoom = Math.max(0.5, Math.min(2.5, factor));
   if (currentZoom === 1.0) {

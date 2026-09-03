@@ -61,7 +61,7 @@
     <aside class="sidebar" id="sidebarPanel">
       <div class="sidebar-header">
         <h2>Параметры квитанции</h2>
-        <span class="card-badge">МСК (UTC+3)</span>
+        <span class="card-badge">Местное + МСК</span>
       </div>
 
       <div class="fields-scroll">
@@ -70,7 +70,7 @@
         <div class="form-card">
           <div class="card-title">
             <span>🚌 Назначение платежа</span>
-            <span class="card-badge">Маршрут</span>
+            <span class="card-badge">Ваше местное время</span>
           </div>
 
           <div id="quickRideFields">
@@ -80,7 +80,7 @@
                 <input type="text" id="rideDate" class="form-control" value="29.08.2026" placeholder="ДД.ММ.ГГГГ" inputmode="numeric">
               </div>
               <div class="input-row">
-                <label>Время (МСК):</label>
+                <label>Время поездки (местное):</label>
                 <input type="text" id="rideTime" class="form-control" value="14:53" placeholder="ЧЧ:ММ">
               </div>
               <div class="input-row">
@@ -90,8 +90,8 @@
             </div>
 
             <div class="quick-btn-group">
-              <button type="button" class="btn-pill" id="btnRideToday">📅 Сегодня (МСК)</button>
-              <button type="button" class="btn-pill" id="btnRideNow">⏰ Сейчас (МСК)</button>
+              <button type="button" class="btn-pill" id="btnRideToday">📅 Сегодня (местное)</button>
+              <button type="button" class="btn-pill" id="btnRideNow">⏰ Сейчас (местное)</button>
               <button type="button" class="btn-pill" id="btnToggleManualText">✏️ Вручную</button>
             </div>
           </div>

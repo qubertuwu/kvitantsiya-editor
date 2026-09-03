@@ -27,7 +27,3 @@
 
 ---
 
-## 🚀 Как запустить
-
-### Быстрый запуск:
-Дважды кликните по файлу **`start.bat`** в этой папке (`C:\Users\kosac\.gemini\antigravity\scratch\photo-data-editor\start.bat`). Сайт автоматически откроется в браузере: `http://localhost:3000`.

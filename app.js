@@ -33,8 +33,9 @@ const createdDatePreview = document.getElementById('createdDatePreview');
 const paymentAmountInput = document.getElementById('paymentAmount');
 
 // Buttons
-const btnRideToday = document.getElementById('btnRideToday');
-const btnRideNow = document.getElementById('btnRideNow');
+const btnRideNowCombined = document.getElementById('btnRideNowCombined');
+const btnFillAllNow = document.getElementById('btnFillAllNow');
+const btnHeaderAllNow = document.getElementById('btnHeaderAllNow');
 const btnToggleManualText = document.getElementById('btnToggleManualText');
 const btnBackToQuick = document.getElementById('btnBackToQuick');
 const btnTransferNow = document.getElementById('btnTransferNow');
@@ -113,6 +114,26 @@ function computeCreatedDate(transferDateStr) {
     return `${pad(dateObj.getDate())}.${pad(dateObj.getMonth() + 1)}.${dateObj.getFullYear()} ${pad(dateObj.getHours())}:${pad(dateObj.getMinutes())} мск`;
   }
   return transferDateStr.replace(/:\d{2}\s+мск/, ' мск');
+}
+
+// Set all times in 1 click
+function setAllTimesNow(silent = false) {
+  // 1. Ride is local time
+  const local = getLocalNow();
+  rideDateInput.value = local.dateStr;
+  rideTimeInput.value = local.timeShortStr;
+
+  // 2. Transfer is Moscow time (MSK)
+  const msk = getMoscowNow();
+  transferDateInput.value = msk.fullTransferStr;
+
+  updateRideText();
+  updateCreatedPreview();
+  draw();
+
+  if (!silent) {
+    showToast(`Поездка: ${local.dateStr} ${local.timeShortStr} | Перевод: ${msk.timeFullStr} МСК`);
+  }
 }
 
 // Update Ride Text Preview and State
@@ -295,22 +316,23 @@ syncCreatedDate.addEventListener('change', () => {
 
 paymentAmountInput.addEventListener('input', draw);
 
-// Кнопки Назначения платежа (ВАШЕ МЕСТНОЕ ВРЕМЯ)
-btnRideToday.addEventListener('click', () => {
+// Кнопка: СЕГОДНЯ И СЕЙЧАС (В 1 КЛИК ДЛЯ ПОЕЗДКИ)
+btnRideNowCombined.addEventListener('click', () => {
   const local = getLocalNow();
   rideDateInput.value = local.dateStr;
-  updateRideText();
-  draw();
-  showToast(`Дата поездки: ${local.dateStr} (местная)`);
-});
-
-btnRideNow.addEventListener('click', () => {
-  const local = getLocalNow();
   rideTimeInput.value = local.timeShortStr;
   updateRideText();
   draw();
-  showToast(`Время поездки: ${local.timeShortStr} (местное)`);
+  showToast(`Поездка: ${local.dateStr} в ${local.timeShortStr}`);
 });
+
+// Кнопка: ВСЁ НА СЕЙЧАС (И ПОЕЗДКА, И ПЕРЕВОД МСК)
+if (btnFillAllNow) {
+  btnFillAllNow.addEventListener('click', () => setAllTimesNow(false));
+}
+if (btnHeaderAllNow) {
+  btnHeaderAllNow.addEventListener('click', () => setAllTimesNow(false));
+}
 
 btnToggleManualText.addEventListener('click', () => {
   isManualRideText = true;
@@ -484,9 +506,9 @@ function escapeHtml(str) {
 
 window.addEventListener('resize', fitCanvas);
 
-// Init
+// Init on start: automatically set current time for convenience!
 window.addEventListener('DOMContentLoaded', () => {
-  updateRideText();
-  updateCreatedPreview();
+  // Auto-fill current date and time on load
+  setAllTimesNow(true);
   loadTemplateImage('receipt_template.png');
 });

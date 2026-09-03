@@ -25,11 +25,14 @@
     </div>
 
     <div class="header-controls">
+      <button class="btn btn-secondary btn-sm" id="btnFillAllNow" style="color: #93c5fd; border-color: #3b82f6aa; font-weight: 700;" title="Поставить текущее время во все поля разом">
+        ⚡ Всё на сейчас
+      </button>
       <input type="file" id="uploadInput" accept=".pdf,image/*" style="display: none;">
       <button class="btn btn-secondary btn-sm" id="btnUpload" title="Загрузить другой PDF или фото">
         📁 Загрузить
       </button>
-      <button class="btn btn-secondary btn-sm" id="btnReset" title="Сбросить все поля к исходным значениям">
+      <button class="btn btn-secondary btn-sm" id="btnReset" title="Сбросить к исходным значениям">
         🔄 Сброс
       </button>
     </div>
@@ -61,7 +64,9 @@
     <aside class="sidebar" id="sidebarPanel">
       <div class="sidebar-header">
         <h2>Параметры квитанции</h2>
-        <span class="card-badge">Местное + МСК</span>
+        <button class="btn-pill" id="btnHeaderAllNow" style="color: #60a5fa; border-color: #3b82f6;">
+          ⚡ Всё на сейчас в 1 клик
+        </button>
       </div>
 
       <div class="fields-scroll">
@@ -90,8 +95,9 @@
             </div>
 
             <div class="quick-btn-group">
-              <button type="button" class="btn-pill" id="btnRideToday">📅 Сегодня (местное)</button>
-              <button type="button" class="btn-pill" id="btnRideNow">⏰ Сейчас (местное)</button>
+              <button type="button" class="btn-pill" id="btnRideNowCombined" style="background: linear-gradient(135deg, #1d4ed8, #2563eb); color: #fff; font-weight: 600;">
+                ⚡ Сегодня и сейчас (местное)
+              </button>
               <button type="button" class="btn-pill" id="btnToggleManualText">✏️ Вручную</button>
             </div>
           </div>
@@ -123,7 +129,9 @@
           </div>
 
           <div class="quick-btn-group">
-            <button type="button" class="btn-pill" id="btnTransferNow">⏱️ Текущее время (МСК)</button>
+            <button type="button" class="btn-pill" id="btnTransferNow" style="background: #1e293b; color: #93c5fd;">
+              ⏱️ Текущее время (МСК)
+            </button>
           </div>
 
           <div style="margin-top: 10px; display: flex; align-items: center; gap: 8px;">

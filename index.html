@@ -1,0 +1,218 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#ef4444">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.json">
+
+  <title>Квитанция СБП — Редактор</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧾</text></svg>">
+</head>
+<body>
+
+  <!-- Top Header -->
+  <header class="app-header">
+    <div class="logo-area">
+      <div class="logo-icon">🅰️</div>
+      <div class="logo-title">
+        <h1>Квитанция Альфа-Банк СБП</h1>
+        <p>Быстрая смена даты, времени, автобуса и суммы</p>
+      </div>
+    </div>
+
+    <div class="header-controls">
+      <input type="file" id="uploadInput" accept=".pdf,image/*" style="display: none;">
+      <button class="btn btn-secondary btn-sm" id="btnUpload" title="Загрузить другой PDF или фото">
+        📁 Загрузить
+      </button>
+      <button class="btn btn-secondary btn-sm" id="btnReset" title="Сбросить все поля к исходным значениям">
+        🔄 Сброс
+      </button>
+    </div>
+  </header>
+
+  <!-- Mobile Segmented Tabs (Visible only on phone/tablet) -->
+  <div class="mobile-tab-bar">
+    <nav class="tab-nav">
+      <button class="tab-btn active" id="tabFormBtn">
+        📝 Заполнить данные
+      </button>
+      <button class="tab-btn" id="tabPreviewBtn">
+        👁️ Предпросмотр квитанции
+      </button>
+    </nav>
+  </div>
+
+  <!-- Main Container (shows Form by default on mobile) -->
+  <div class="app-container show-form" id="appContainer">
+
+    <!-- Left Controls Panel -->
+    <aside class="sidebar" id="sidebarPanel">
+      <div class="sidebar-header">
+        <h2>Параметры квитанции</h2>
+        <span class="card-badge">PDF Оригинал</span>
+      </div>
+
+      <div class="fields-scroll">
+
+        <!-- 1. Назначение платежа -->
+        <div class="form-card">
+          <div class="card-title">
+            <span>🚌 Назначение платежа</span>
+            <span class="card-badge">Маршрут</span>
+          </div>
+
+          <div id="quickRideFields">
+            <div class="input-grid-3">
+              <div class="input-row">
+                <label>Дата поездки:</label>
+                <input type="text" id="rideDate" class="form-control" value="29.08.2026" placeholder="ДД.ММ.ГГГГ" inputmode="numeric">
+              </div>
+              <div class="input-row">
+                <label>Время:</label>
+                <input type="text" id="rideTime" class="form-control" value="14:53" placeholder="ЧЧ:ММ">
+              </div>
+              <div class="input-row">
+                <label>Автобус №:</label>
+                <input type="text" id="busNumber" class="form-control" value="14" placeholder="14" inputmode="numeric">
+              </div>
+            </div>
+
+            <div class="quick-btn-group">
+              <button type="button" class="btn-pill" id="btnRideToday">📅 Сегодня</button>
+              <button type="button" class="btn-pill" id="btnRideNow">⏰ Сейчас</button>
+              <button type="button" class="btn-pill" id="btnToggleManualText">✏️ Вручную</button>
+            </div>
+          </div>
+
+          <!-- Manual override textarea -->
+          <div id="manualTextContainer" style="display: none; margin-top: 10px;">
+            <div class="input-row">
+              <label>Полный текст (2 строки):</label>
+              <textarea id="manualRideText" class="form-control" rows="3" style="resize: vertical; font-size: 14px;"></textarea>
+            </div>
+            <button type="button" class="btn-pill" id="btnBackToQuick">⬅️ К отдельным полям</button>
+          </div>
+
+          <div class="preview-box" id="rideTextPreview">
+            Оплата поездки от 29.08.2026 14:53, Автобус<br>14
+          </div>
+        </div>
+
+        <!-- 2. Дата отправки перевода -->
+        <div class="form-card">
+          <div class="card-title">
+            <span>📅 Дата отправки перевода</span>
+            <span class="card-badge">СБП</span>
+          </div>
+
+          <div class="input-row">
+            <label>Дата и время отправки (с секундами):</label>
+            <input type="text" id="transferDate" class="form-control" value="29.08.2026 11:53:21 мск">
+          </div>
+
+          <div class="quick-btn-group">
+            <button type="button" class="btn-pill" id="btnTransferNow">⏱️ Поставить текущее время</button>
+          </div>
+
+          <div style="margin-top: 10px; display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" id="syncCreatedDate" checked style="cursor: pointer; width: 18px; height: 18px;">
+            <label for="syncCreatedDate" style="font-size: 12px; color: var(--text-muted); cursor: pointer;">
+              Обновлять «Сформирована» вверху (+4 мин)
+            </label>
+          </div>
+          <div id="createdDatePreview" style="font-size: 11px; color: #64748b; margin-top: 4px;">
+            Вверху будет: 29.08.2026 11:57 мск
+          </div>
+        </div>
+
+        <!-- 3. Сумма платежа -->
+        <div class="form-card">
+          <div class="card-title">
+            <span>💰 Сумма платежа</span>
+            <span class="card-badge">по умолч. 40</span>
+          </div>
+
+          <div class="input-grid-2">
+            <div class="input-row">
+              <label>Сумма (руб):</label>
+              <input type="number" id="paymentAmount" class="form-control" value="40" step="1" min="1" inputmode="numeric">
+            </div>
+            <div class="input-row">
+              <label>Валюта:</label>
+              <input type="text" id="paymentCurrency" class="form-control" value="RUR" readonly style="opacity: 0.7;">
+            </div>
+          </div>
+
+          <div class="quick-btn-group">
+            <button type="button" class="btn-pill" id="btnResetAmount">🔄 Сбросить на 40 RUR</button>
+          </div>
+        </div>
+
+        <!-- 4. Референс -->
+        <div class="form-card">
+          <div class="card-title">
+            <span>🔢 Референс операции</span>
+          </div>
+          <div class="input-row">
+            <input type="text" id="referenceInput" class="form-control" value="A6241085323513140B10080011840301" style="font-size: 12px;">
+          </div>
+          <div class="quick-btn-group">
+            <button type="button" class="btn-pill" id="btnGenReference">🎲 Сгенерировать новый</button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="sidebar-footer">
+        <button class="btn btn-red" id="btnDownloadPdf" style="width: 100%; font-size: 16px; padding: 14px;">
+          📄 Скачать квитанцию (PDF)
+        </button>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <button class="btn btn-secondary btn-sm" id="btnDownloadPng">
+            🖼️ Скачать PNG
+          </button>
+          <button class="btn btn-secondary btn-sm" id="btnCopyImage">
+            📋 Скопировать
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Right Workspace / Live PDF Preview -->
+    <main class="workspace" id="workspacePanel">
+      <div class="workspace-toolbar">
+        <div id="imageInfo">Загрузка оригинального PDF...</div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <button class="btn btn-secondary btn-sm" id="zoomOut" title="Уменьшить">-</button>
+          <span id="zoomLabel" style="min-width: 45px; text-align: center;">100%</span>
+          <button class="btn btn-secondary btn-sm" id="zoomIn" title="Увеличить">+</button>
+          <button class="btn btn-secondary btn-sm" id="zoomFit" title="Вписать в окно">Вписать</button>
+        </div>
+      </div>
+
+      <div class="canvas-container" id="canvasScrollArea">
+        <div class="canvas-wrapper" id="canvasWrapper">
+          <canvas id="imageCanvas"></canvas>
+        </div>
+      </div>
+    </main>
+
+  </div>
+
+  <!-- Toast popup -->
+  <div class="toast" id="toast">Готово!</div>
+
+  <!-- PDF libraries -->
+  <script src="pdf.min.js"></script>
+  <script src="jspdf.umd.min.js"></script>
+
+  <!-- Application Logic -->
+  <script src="app.js"></script>
+</body>
+</html>

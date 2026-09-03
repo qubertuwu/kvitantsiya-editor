@@ -1,0 +1,65 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f8fafc" />
+      <stop offset="100%" stop-color="#e2e8f0" />
+    </linearGradient>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#d97706" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </linearGradient>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="8" stdDeviation="16" flood-opacity="0.08" />
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="800" fill="url(#bg)" />
+
+  <!-- Outer Card Frame -->
+  <rect x="40" y="40" width="1120" height="720" rx="16" fill="#ffffff" stroke="#cbd5e1" stroke-width="2" filter="url(#shadow)" />
+  <rect x="56" y="56" width="1088" height="688" rx="10" fill="none" stroke="#e2e8f0" stroke-width="1.5" stroke-dasharray="6,4" />
+
+  <!-- Header Decoration -->
+  <circle cx="600" cy="130" r="45" fill="url(#gold)" opacity="0.15" />
+  <circle cx="600" cy="130" r="35" fill="url(#gold)" opacity="0.25" />
+  <polygon points="600,105 607,122 625,122 611,133 616,150 600,140 584,150 589,133 575,122 593,122" fill="#d97706" />
+
+  <!-- Title -->
+  <text x="600" y="210" text-anchor="middle" font-family="'Segoe UI', Roboto, sans-serif" font-size="34" font-weight="700" fill="#0f172a" letter-spacing="2">ОФИЦИАЛЬНЫЙ СЕРТИФИКАТ</text>
+  <text x="600" y="245" text-anchor="middle" font-family="'Segoe UI', Roboto, sans-serif" font-size="16" fill="#64748b" letter-spacing="1">ПОДТВЕРЖДЕНИЕ ВЫДАЧИ И РЕГИСТРАЦИИ ДАННЫХ</text>
+  
+  <line x1="300" y1="270" x2="900" y2="270" stroke="#e2e8f0" stroke-width="2" />
+
+  <!-- Field Labels / Structure -->
+  <!-- 1. Имя владельца -->
+  <text x="600" y="320" text-anchor="middle" font-family="'Segoe UI', Roboto, sans-serif" font-size="14" fill="#94a3b8" text-transform="uppercase" letter-spacing="1.5">НАСТОЯЩИМ УДОСТОВЕРЯЕТСЯ, ЧТО</text>
+  
+  <!-- Underline for Name -->
+  <line x1="250" y1="410" x2="950" y2="410" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4,4" />
+
+  <!-- 2. Описание / Предмет -->
+  <text x="600" y="450" text-anchor="middle" font-family="'Segoe UI', Roboto, sans-serif" font-size="15" fill="#475569">
+    Успешно подтвердил(а) актуальные учетные данные в системе
+  </text>
+
+  <!-- Info Columns Container -->
+  <rect x="180" y="500" width="840" height="110" rx="12" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1" />
+
+  <!-- Col 1: Номер документа -->
+  <text x="240" y="535" font-family="'Segoe UI', Roboto, sans-serif" font-size="13" fill="#64748b" font-weight="600">НОМЕР СЕРТИФИКАТА:</text>
+
+  <!-- Col 2: Дата -->
+  <text x="560" y="535" font-family="'Segoe UI', Roboto, sans-serif" font-size="13" fill="#64748b" font-weight="600">ДАТА ВЫДАЧИ:</text>
+
+  <!-- Col 3: Сумма / Баллы -->
+  <text x="820" y="535" font-family="'Segoe UI', Roboto, sans-serif" font-size="13" fill="#64748b" font-weight="600">СУММА / БАЛЛ:</text>
+
+  <!-- Footer Seal & Signature placeholder -->
+  <circle cx="280" cy="670" r="32" fill="#e0e7ff" stroke="#6366f1" stroke-width="2" stroke-dasharray="5,3" />
+  <text x="280" y="675" text-anchor="middle" font-family="'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="bold" fill="#4f46e5">ПЕЧАТЬ</text>
+  <text x="280" y="718" text-anchor="middle" font-family="'Segoe UI', Roboto, sans-serif" font-size="12" fill="#94a3b8">Организация</text>
+
+  <line x1="780" y1="675" x2="980" y2="675" stroke="#475569" stroke-width="1.5" />
+  <text x="880" y="695" text-anchor="middle" font-family="'Segoe UI', Roboto, sans-serif" font-size="12" fill="#94a3b8">Подпись ответственного лица</text>
+</svg>

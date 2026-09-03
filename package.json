@@ -1,0 +1,20 @@
+{
+  "name": "photo-data-editor",
+  "version": "1.0.0",
+  "description": "Simple web app to edit and overlay fresh data on photos/templates",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [
+    "canvas",
+    "photo",
+    "editor",
+    "template"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "pdf-lib": "^1.17.1"
+  }
+}

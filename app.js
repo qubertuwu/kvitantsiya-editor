@@ -131,9 +131,9 @@ function updateCreatedPreview() {
   }
 }
 
-// Fast Template Loader (loads pre-rendered crisp PNG for 100% device compatibility)
+// Fast Template Loader
 function loadTemplateImage(src = 'receipt_template.png') {
-  imageInfo.textContent = 'Загрузка квитанции...';
+  imageInfo.textContent = 'Загрузка...';
   const img = new Image();
   img.onload = () => {
     canvas.width = img.naturalWidth || 1190;
@@ -184,7 +184,7 @@ async function loadPdfDocument(source) {
     draw();
   } catch (err) {
     console.error('Failed to render PDF:', err);
-    imageInfo.textContent = 'Ошибка загрузки квитанции';
+    imageInfo.textContent = 'Ошибка загрузки';
     showToast('Не удалось загрузить файл', false);
   }
 }
@@ -201,7 +201,6 @@ function draw() {
   const fontFam = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
 
   // 1. НАЗНАЧЕНИЕ ПЛАТЕЖА
-  // Аккуратная закраска строк поездки (не трогая референс!)
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(33 * S, 296 * S, 260 * S, 34 * S);
 
@@ -259,8 +258,6 @@ function draw() {
   ctx.fillStyle = '#000000';
   ctx.font = `${12 * S}px ${fontFam}`;
   ctx.fillText(amountText, 35.45 * S, (841.9 - 621.394) * S);
-
-  // Референс остается оригинальным и четким из исходника.
 }
 
 // Input listeners
@@ -443,29 +440,22 @@ btnCopyImage.addEventListener('click', () => {
   }, 'image/png');
 });
 
-// Zoom & Fit
+// Clean Zoom Controls
 function setZoom(factor) {
-  currentZoom = Math.max(0.15, Math.min(3.0, factor));
-  canvas.style.transform = `scale(${currentZoom})`;
-  canvas.style.transformOrigin = 'top center';
+  currentZoom = Math.max(0.5, Math.min(2.5, factor));
+  if (currentZoom === 1.0) {
+    canvas.style.transform = 'none';
+  } else {
+    canvas.style.transform = `scale(${currentZoom})`;
+    canvas.style.transformOrigin = 'top center';
+  }
   zoomLabel.textContent = `${Math.round(currentZoom * 100)}%`;
 }
 
 function fitCanvas() {
-  const container = document.getElementById('canvasScrollArea');
-  if (!container) return;
-  const isMobile = window.innerWidth <= 860;
-  const pad = isMobile ? 16 : 40;
-  const availW = container.clientWidth - pad;
-  const availH = container.clientHeight - pad;
-  if (canvas.width && canvas.height && availW > 0) {
-    const scale = isMobile 
-      ? Math.min(availW / canvas.width, 1.0)
-      : Math.min(availW / canvas.width, (availH > 0 ? availH : 600) / canvas.height, 1.0);
-    setZoom(scale);
-  } else {
-    setZoom(1.0);
-  }
+  currentZoom = 1.0;
+  canvas.style.transform = 'none';
+  zoomLabel.textContent = '100%';
 }
 
 zoomInBtn.addEventListener('click', () => setZoom(currentZoom + 0.15));
@@ -483,10 +473,9 @@ function escapeHtml(str) {
 
 window.addEventListener('resize', fitCanvas);
 
-// Init on start
+// Init
 window.addEventListener('DOMContentLoaded', () => {
   updateRideText();
   updateCreatedPreview();
-  // Fast direct load with 100% mobile compatibility
   loadTemplateImage('receipt_template.png');
 });

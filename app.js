@@ -26,9 +26,8 @@ const manualRideText = document.getElementById('manualRideText');
 const manualTextContainer = document.getElementById('manualTextContainer');
 const quickRideFields = document.getElementById('quickRideFields');
 
+const createdDateInput = document.getElementById('createdDateInput');
 const transferDateInput = document.getElementById('transferDate');
-const syncCreatedDate = document.getElementById('syncCreatedDate');
-const createdDatePreview = document.getElementById('createdDatePreview');
 
 const paymentAmountInput = document.getElementById('paymentAmount');
 
@@ -73,7 +72,8 @@ function getLocalNow() {
   };
 }
 
-// 2. Moscow Timezone (MSK / UTC+3) Helper (for bank transfer stamp)
+// 2. Moscow Timezone (MSK / UTC+3) Helper
+// Сформирована = текущее время прямо сейчас по Москве!
 function getMoscowNow() {
   const formatter = new Intl.DateTimeFormat('ru-RU', {
     timeZone: 'Europe/Moscow',
@@ -92,46 +92,28 @@ function getMoscowNow() {
     dateStr: `${m.day}.${m.month}.${m.year}`,
     timeShortStr: `${m.hour}:${m.minute}`,
     timeFullStr: `${m.hour}:${m.minute}:${m.second}`,
-    fullTransferStr: `${m.day}.${m.month}.${m.year} ${m.hour}:${m.minute}:${m.second} мск`
+    fullTransferStr: `${m.day}.${m.month}.${m.year} ${m.hour}:${m.minute}:${m.second} мск`,
+    createdMskStr: `${m.day}.${m.month}.${m.year} ${m.hour}:${m.minute} мск`
   };
-}
-
-// Compute Created Date (+4 mins from transfer date)
-function computeCreatedDate(transferDateStr) {
-  const regex = /(\d{2})\.(\d{2})\.(\d{4})\s+(\d{2}):(\d{2})(?::(\d{2}))?/;
-  const match = transferDateStr.match(regex);
-  if (match) {
-    const day = parseInt(match[1], 10);
-    const month = parseInt(match[2], 10) - 1;
-    const year = parseInt(match[3], 10);
-    const hours = parseInt(match[4], 10);
-    const minutes = parseInt(match[5], 10);
-    const seconds = match[6] ? parseInt(match[6], 10) : 0;
-
-    const dateObj = new Date(year, month, day, hours, minutes, seconds);
-    dateObj.setMinutes(dateObj.getMinutes() + 4);
-
-    const pad = (n) => String(n).padStart(2, '0');
-    return `${pad(dateObj.getDate())}.${pad(dateObj.getMonth() + 1)}.${dateObj.getFullYear()} ${pad(dateObj.getHours())}:${pad(dateObj.getMinutes())} мск`;
-  }
-  return transferDateStr.replace(/:\d{2}\s+мск/, ' мск');
 }
 
 // Set all times in 1 click
 function setAllTimesNow(silent = false) {
+  // Поездка - местное время
   const local = getLocalNow();
   if (rideDateInput) rideDateInput.value = local.dateStr;
   if (rideTimeInput) rideTimeInput.value = local.timeShortStr;
 
+  // Сформирована и Отправка - текущее время по Москве (МСК) прямо сейчас
   const msk = getMoscowNow();
+  if (createdDateInput) createdDateInput.value = msk.createdMskStr;
   if (transferDateInput) transferDateInput.value = msk.fullTransferStr;
 
   updateRideText();
-  updateCreatedPreview();
   draw();
 
   if (!silent) {
-    showToast(`Поездка: ${local.dateStr} ${local.timeShortStr} | Перевод: ${msk.timeFullStr} МСК`);
+    showToast(`Поездка: ${local.dateStr} ${local.timeShortStr} | МСК: ${msk.timeFullStr}`);
   }
 }
 
@@ -149,17 +131,6 @@ function updateRideText() {
     const line1 = `Оплата поездки от ${d} ${t}, Автобус`;
     const line2 = `${b}`;
     rideTextPreview.innerHTML = `${escapeHtml(line1)}<br>${escapeHtml(line2)}`;
-  }
-}
-
-// Update Created Date Preview
-function updateCreatedPreview() {
-  if (!createdDatePreview || !transferDateInput) return;
-  if (syncCreatedDate && syncCreatedDate.checked) {
-    const createdText = computeCreatedDate(transferDateInput.value);
-    createdDatePreview.textContent = `Вверху будет: ${createdText}`;
-  } else {
-    createdDatePreview.textContent = 'Вверху дата останется исходной';
   }
 }
 
@@ -273,16 +244,14 @@ function draw() {
   ctx.font = `${12 * S}px ${fontFam}`;
   ctx.fillText(transferText, 304.75 * S, (841.9 - 664.288) * S);
 
-  // 3. СФОРМИРОВАНА (дата вверху справа)
-  if (syncCreatedDate && syncCreatedDate.checked) {
-    const createdText = computeCreatedDate(transferText);
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(445 * S, 53 * S, 125 * S, 13 * S);
+  // 3. СФОРМИРОВАНА (дата вверху справа - текущее время прямо сейчас по МСК!)
+  const createdText = createdDateInput?.value?.trim() || getMoscowNow().createdMskStr;
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(445 * S, 53 * S, 125 * S, 13 * S);
 
-    ctx.fillStyle = '#595959';
-    ctx.font = `${11 * S}px ${fontFam}`;
-    ctx.fillText(createdText, 452.79 * S, (841.9 - 779.15) * S);
-  }
+  ctx.fillStyle = '#595959';
+  ctx.font = `${11 * S}px ${fontFam}`;
+  ctx.fillText(createdText, 452.79 * S, (841.9 - 779.15) * S);
 
   // 4. СУММА ПЛАТЕЖА (по умолчанию 40 RUR)
   ctx.fillStyle = '#ffffff';
@@ -312,18 +281,12 @@ if (manualRideText) {
   });
 }
 
-if (transferDateInput) {
-  transferDateInput.addEventListener('input', () => {
-    updateCreatedPreview();
-    draw();
-  });
+if (createdDateInput) {
+  createdDateInput.addEventListener('input', draw);
 }
 
-if (syncCreatedDate) {
-  syncCreatedDate.addEventListener('change', () => {
-    updateCreatedPreview();
-    draw();
-  });
+if (transferDateInput) {
+  transferDateInput.addEventListener('input', draw);
 }
 
 if (paymentAmountInput) {
@@ -342,7 +305,7 @@ if (btnRideNowCombined) {
   });
 }
 
-// Кнопка: ВСЁ НА СЕЙЧАС (И ПОЕЗДКА, И ПЕРЕВОД МСК)
+// Кнопка: ВСЁ НА СЕЙЧАС (И ПОЕЗДКА, И ПЕРЕВОД, И СФОРМИРОВАНА МСК)
 if (btnFillAllNow) {
   btnFillAllNow.addEventListener('click', () => setAllTimesNow(false));
 }
@@ -373,14 +336,14 @@ if (btnBackToQuick) {
   });
 }
 
-// Кнопка Даты перевода (МОСКОВСКОЕ ВРЕМЯ МСК)
+// Кнопка Даты перевода и Сформирована (МОСКОВСКОЕ ВРЕМЯ МСК)
 if (btnTransferNow) {
   btnTransferNow.addEventListener('click', () => {
     const msk = getMoscowNow();
+    if (createdDateInput) createdDateInput.value = msk.createdMskStr;
     if (transferDateInput) transferDateInput.value = msk.fullTransferStr;
-    updateCreatedPreview();
     draw();
-    showToast(`Время перевода: ${msk.timeFullStr} (МСК)`);
+    showToast(`Сформирована: ${msk.createdMskStr} (МСК)`);
   });
 }
 
@@ -436,13 +399,12 @@ if (btnReset) {
       if (manualTextContainer) manualTextContainer.style.display = 'none';
       if (quickRideFields) quickRideFields.style.display = 'block';
 
+      if (createdDateInput) createdDateInput.value = '29.08.2026 11:57 мск';
       if (transferDateInput) transferDateInput.value = '29.08.2026 11:53:21 мск';
-      if (syncCreatedDate) syncCreatedDate.checked = true;
 
       if (paymentAmountInput) paymentAmountInput.value = '40';
 
       updateRideText();
-      updateCreatedPreview();
       draw();
       showToast('Данные сброшены');
     }

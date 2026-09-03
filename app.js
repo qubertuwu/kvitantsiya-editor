@@ -4,7 +4,7 @@ if (window.pdfjsLib) {
 }
 
 // Global Application State
-let baseCanvas = document.createElement('canvas'); // Offscreen pristine PDF render
+let baseCanvas = document.createElement('canvas'); // Offscreen pristine render
 let baseCtx = baseCanvas.getContext('2d');
 let currentPdfScale = 2.0; // High DPI scale factor
 let pdfDoc = null;
@@ -16,11 +16,6 @@ const canvas = document.getElementById('imageCanvas');
 const ctx = canvas.getContext('2d');
 const imageInfo = document.getElementById('imageInfo');
 const toastEl = document.getElementById('toast');
-const appContainer = document.getElementById('appContainer');
-
-// Mobile Tabs
-const tabFormBtn = document.getElementById('tabFormBtn');
-const tabPreviewBtn = document.getElementById('tabPreviewBtn');
 
 // Inputs
 const rideDateInput = document.getElementById('rideDate');
@@ -57,24 +52,6 @@ const zoomInBtn = document.getElementById('zoomIn');
 const zoomOutBtn = document.getElementById('zoomOut');
 const zoomFitBtn = document.getElementById('zoomFit');
 const zoomLabel = document.getElementById('zoomLabel');
-
-// Mobile Tab Switching
-if (tabFormBtn && tabPreviewBtn) {
-  tabFormBtn.addEventListener('click', () => {
-    tabFormBtn.classList.add('active');
-    tabPreviewBtn.classList.remove('active');
-    appContainer.classList.remove('show-preview');
-    appContainer.classList.add('show-form');
-  });
-
-  tabPreviewBtn.addEventListener('click', () => {
-    tabPreviewBtn.classList.add('active');
-    tabFormBtn.classList.remove('active');
-    appContainer.classList.remove('show-form');
-    appContainer.classList.add('show-preview');
-    setTimeout(fitCanvas, 60);
-  });
-}
 
 // Toast Feedback
 function showToast(message, isSuccess = true) {
@@ -154,7 +131,28 @@ function updateCreatedPreview() {
   }
 }
 
-// Load default or uploaded PDF
+// Fast Template Loader (loads pre-rendered crisp PNG for 100% device compatibility)
+function loadTemplateImage(src = 'receipt_template.png') {
+  imageInfo.textContent = 'Загрузка квитанции...';
+  const img = new Image();
+  img.onload = () => {
+    canvas.width = img.naturalWidth || 1190;
+    canvas.height = img.naturalHeight || 1683;
+    baseCanvas.width = canvas.width;
+    baseCanvas.height = canvas.height;
+    baseCtx.drawImage(img, 0, 0);
+    imageInfo.textContent = `Квитанция A4: ${canvas.width} × ${canvas.height} px`;
+    fitCanvas();
+    draw();
+  };
+  img.onerror = () => {
+    console.warn('Image load error, trying PDF fallback');
+    loadPdfDocument('receipt_template.pdf');
+  };
+  img.src = src;
+}
+
+// Fallback PDF loader
 async function loadPdfDocument(source) {
   try {
     imageInfo.textContent = 'Рендеринг PDF...';
@@ -173,11 +171,9 @@ async function loadPdfDocument(source) {
     canvas.width = viewport.width;
     canvas.height = viewport.height;
 
-    // Size offscreen base canvas
     baseCanvas.width = viewport.width;
     baseCanvas.height = viewport.height;
 
-    // Render into base offscreen canvas
     await page.render({
       canvasContext: baseCtx,
       viewport: viewport
@@ -188,8 +184,8 @@ async function loadPdfDocument(source) {
     draw();
   } catch (err) {
     console.error('Failed to render PDF:', err);
-    imageInfo.textContent = 'Ошибка загрузки PDF';
-    showToast('Не удалось загрузить PDF файл', false);
+    imageInfo.textContent = 'Ошибка загрузки квитанции';
+    showToast('Не удалось загрузить файл', false);
   }
 }
 
@@ -197,18 +193,15 @@ async function loadPdfDocument(source) {
 function draw() {
   if (!baseCanvas.width || !baseCanvas.height) return;
 
-  // 1. Draw pristine original PDF base
+  // 1. Draw pristine original receipt base
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.drawImage(baseCanvas, 0, 0);
 
   const S = currentPdfScale; // 2.0
-  // Clean cross-platform font (SF Pro on iOS, Roboto on Android, Segoe UI on Windows)
   const fontFam = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
 
-  // -----------------------------------------------------------------
   // 1. НАЗНАЧЕНИЕ ПЛАТЕЖА
-  // Аккуратная закраска ТОЛЬКО двух строк текста поездки (не задевая Референс!)
-  // -----------------------------------------------------------------
+  // Аккуратная закраска строк поездки (не трогая референс!)
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(33 * S, 296 * S, 260 * S, 34 * S);
 
@@ -237,9 +230,7 @@ function draw() {
   if (rideLines[0]) ctx.fillText(rideLines[0], startX, line1Y);
   if (rideLines[1]) ctx.fillText(rideLines[1], startX, line2Y);
 
-  // -----------------------------------------------------------------
   // 2. ДАТА ОТПРАВКИ ПЕРЕВОДА
-  // -----------------------------------------------------------------
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(302 * S, 168 * S, 180 * S, 15 * S);
 
@@ -248,9 +239,7 @@ function draw() {
   ctx.font = `${12 * S}px ${fontFam}`;
   ctx.fillText(transferText, 304.75 * S, (841.9 - 664.288) * S);
 
-  // -----------------------------------------------------------------
   // 3. СФОРМИРОВАНА (дата вверху справа)
-  // -----------------------------------------------------------------
   if (syncCreatedDate.checked) {
     const createdText = computeCreatedDate(transferText);
     ctx.fillStyle = '#ffffff';
@@ -261,9 +250,7 @@ function draw() {
     ctx.fillText(createdText, 452.79 * S, (841.9 - 779.15) * S);
   }
 
-  // -----------------------------------------------------------------
   // 4. СУММА ПЛАТЕЖА (по умолчанию 40 RUR)
-  // -----------------------------------------------------------------
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(33 * S, 211 * S, 100 * S, 14 * S);
 
@@ -273,13 +260,10 @@ function draw() {
   ctx.font = `${12 * S}px ${fontFam}`;
   ctx.fillText(amountText, 35.45 * S, (841.9 - 621.394) * S);
 
-  // -----------------------------------------------------------------
-  // ВАЖНО: РЕФЕРЕНС ОСТАЕТСЯ ОРИГИНАЛЬНЫМ ИЗ PDF!
-  // Никаких белых плашек поверх референса — он всегда четкий и виден!
-  // -----------------------------------------------------------------
+  // Референс остается оригинальным и четким из исходника.
 }
 
-// Listeners for live typing
+// Input listeners
 [rideDateInput, rideTimeInput, busNumberInput].forEach(el => {
   el.addEventListener('input', () => {
     updateRideText();
@@ -469,12 +453,15 @@ function setZoom(factor) {
 
 function fitCanvas() {
   const container = document.getElementById('canvasScrollArea');
+  if (!container) return;
   const isMobile = window.innerWidth <= 860;
-  const pad = isMobile ? 20 : 50;
+  const pad = isMobile ? 16 : 40;
   const availW = container.clientWidth - pad;
   const availH = container.clientHeight - pad;
-  if (canvas.width && canvas.height && availW > 0 && availH > 0) {
-    const scale = Math.min(availW / canvas.width, availH / canvas.height, 1.0);
+  if (canvas.width && canvas.height && availW > 0) {
+    const scale = isMobile 
+      ? Math.min(availW / canvas.width, 1.0)
+      : Math.min(availW / canvas.width, (availH > 0 ? availH : 600) / canvas.height, 1.0);
     setZoom(scale);
   } else {
     setZoom(1.0);
@@ -496,9 +483,10 @@ function escapeHtml(str) {
 
 window.addEventListener('resize', fitCanvas);
 
-// Init
+// Init on start
 window.addEventListener('DOMContentLoaded', () => {
   updateRideText();
   updateCreatedPreview();
-  loadPdfDocument('receipt_template.pdf');
+  // Fast direct load with 100% mobile compatibility
+  loadTemplateImage('receipt_template.png');
 });

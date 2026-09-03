@@ -35,22 +35,29 @@
     </div>
   </header>
 
-  <!-- Mobile Segmented Tabs -->
-  <div class="mobile-tab-bar">
-    <nav class="tab-nav">
-      <button class="tab-btn active" id="tabFormBtn">
-        📝 Заполнить данные
-      </button>
-      <button class="tab-btn" id="tabPreviewBtn">
-        👁️ Предпросмотр квитанции
-      </button>
-    </nav>
-  </div>
-
   <!-- Main Container -->
-  <div class="app-container show-form" id="appContainer">
+  <div class="app-container" id="appContainer">
 
-    <!-- Left Controls Panel -->
+    <!-- Workspace / Live Preview (On mobile appears at top!) -->
+    <main class="workspace" id="workspacePanel">
+      <div class="workspace-toolbar">
+        <div id="imageInfo">Загрузка квитанции...</div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <button class="btn btn-secondary btn-sm" id="zoomOut" title="Уменьшить">-</button>
+          <span id="zoomLabel" style="min-width: 45px; text-align: center;">100%</span>
+          <button class="btn btn-secondary btn-sm" id="zoomIn" title="Увеличить">+</button>
+          <button class="btn btn-secondary btn-sm" id="zoomFit" title="Вписать в окно">Вписать</button>
+        </div>
+      </div>
+
+      <div class="canvas-container" id="canvasScrollArea">
+        <div class="canvas-wrapper" id="canvasWrapper">
+          <canvas id="imageCanvas"></canvas>
+        </div>
+      </div>
+    </main>
+
+    <!-- Controls Panel (On mobile appears right below preview) -->
     <aside class="sidebar" id="sidebarPanel">
       <div class="sidebar-header">
         <h2>Параметры квитанции</h2>
@@ -155,7 +162,7 @@
 
       </div>
 
-      <!-- Action Buttons -->
+      <!-- Action Buttons (Sticky at bottom on phone) -->
       <div class="sidebar-footer">
         <button class="btn btn-red" id="btnDownloadPdf" style="width: 100%; font-size: 16px; padding: 14px;">
           📄 Скачать квитанцию (PDF)
@@ -171,31 +178,12 @@
       </div>
     </aside>
 
-    <!-- Right Workspace / Live PDF Preview -->
-    <main class="workspace" id="workspacePanel">
-      <div class="workspace-toolbar">
-        <div id="imageInfo">Загрузка оригинального PDF...</div>
-        <div style="display: flex; gap: 8px; align-items: center;">
-          <button class="btn btn-secondary btn-sm" id="zoomOut" title="Уменьшить">-</button>
-          <span id="zoomLabel" style="min-width: 45px; text-align: center;">100%</span>
-          <button class="btn btn-secondary btn-sm" id="zoomIn" title="Увеличить">+</button>
-          <button class="btn btn-secondary btn-sm" id="zoomFit" title="Вписать в окно">Вписать</button>
-        </div>
-      </div>
-
-      <div class="canvas-container" id="canvasScrollArea">
-        <div class="canvas-wrapper" id="canvasWrapper">
-          <canvas id="imageCanvas"></canvas>
-        </div>
-      </div>
-    </main>
-
   </div>
 
   <!-- Toast popup -->
   <div class="toast" id="toast">Готово!</div>
 
-  <!-- PDF libraries -->
+  <!-- Libraries -->
   <script src="pdf.min.js"></script>
   <script src="jspdf.umd.min.js"></script>
 

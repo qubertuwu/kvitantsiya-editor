@@ -56,6 +56,7 @@ const zoomLabel = document.getElementById('zoomLabel');
 
 // Toast Feedback
 function showToast(message, isSuccess = true) {
+  if (!toastEl) return;
   toastEl.textContent = message;
   toastEl.style.backgroundColor = isSuccess ? '#10b981' : '#ef4444';
   toastEl.classList.add('show');
@@ -118,14 +119,12 @@ function computeCreatedDate(transferDateStr) {
 
 // Set all times in 1 click
 function setAllTimesNow(silent = false) {
-  // 1. Ride is local time
   const local = getLocalNow();
-  rideDateInput.value = local.dateStr;
-  rideTimeInput.value = local.timeShortStr;
+  if (rideDateInput) rideDateInput.value = local.dateStr;
+  if (rideTimeInput) rideTimeInput.value = local.timeShortStr;
 
-  // 2. Transfer is Moscow time (MSK)
   const msk = getMoscowNow();
-  transferDateInput.value = msk.fullTransferStr;
+  if (transferDateInput) transferDateInput.value = msk.fullTransferStr;
 
   updateRideText();
   updateCreatedPreview();
@@ -138,13 +137,14 @@ function setAllTimesNow(silent = false) {
 
 // Update Ride Text Preview and State
 function updateRideText() {
+  if (!rideTextPreview) return;
   if (isManualRideText) {
-    const lines = manualRideText.value.split('\n');
+    const lines = (manualRideText?.value || '').split('\n');
     rideTextPreview.innerHTML = lines.map(escapeHtml).join('<br>');
   } else {
-    const d = rideDateInput.value.trim();
-    const t = rideTimeInput.value.trim();
-    const b = busNumberInput.value.trim();
+    const d = rideDateInput?.value?.trim() || '29.08.2026';
+    const t = rideTimeInput?.value?.trim() || '14:53';
+    const b = busNumberInput?.value?.trim() || '14';
 
     const line1 = `Оплата поездки от ${d} ${t}, Автобус`;
     const line2 = `${b}`;
@@ -154,7 +154,8 @@ function updateRideText() {
 
 // Update Created Date Preview
 function updateCreatedPreview() {
-  if (syncCreatedDate.checked) {
+  if (!createdDatePreview || !transferDateInput) return;
+  if (syncCreatedDate && syncCreatedDate.checked) {
     const createdText = computeCreatedDate(transferDateInput.value);
     createdDatePreview.textContent = `Вверху будет: ${createdText}`;
   } else {
@@ -164,7 +165,7 @@ function updateCreatedPreview() {
 
 // Fast Template Loader
 function loadTemplateImage(src = 'receipt_template.png') {
-  imageInfo.textContent = 'Загрузка...';
+  if (imageInfo) imageInfo.textContent = 'Загрузка квитанции...';
   const img = new Image();
   img.onload = () => {
     canvas.width = img.naturalWidth || 1190;
@@ -172,7 +173,7 @@ function loadTemplateImage(src = 'receipt_template.png') {
     baseCanvas.width = canvas.width;
     baseCanvas.height = canvas.height;
     baseCtx.drawImage(img, 0, 0);
-    imageInfo.textContent = `Квитанция A4: ${canvas.width} × ${canvas.height} px`;
+    if (imageInfo) imageInfo.textContent = `Квитанция A4: ${canvas.width} × ${canvas.height} px`;
     fitCanvas();
     draw();
   };
@@ -181,12 +182,15 @@ function loadTemplateImage(src = 'receipt_template.png') {
     loadPdfDocument('receipt_template.pdf');
   };
   img.src = src;
+  if (img.complete && img.naturalWidth > 0) {
+    img.onload();
+  }
 }
 
 // Fallback PDF loader
 async function loadPdfDocument(source) {
   try {
-    imageInfo.textContent = 'Рендеринг PDF...';
+    if (imageInfo) imageInfo.textContent = 'Рендеринг PDF...';
 
     let loadingTask;
     if (typeof source === 'string') {
@@ -210,19 +214,19 @@ async function loadPdfDocument(source) {
       viewport: viewport
     }).promise;
 
-    imageInfo.textContent = `PDF A4: ${Math.round(viewport.width)} × ${Math.round(viewport.height)} px`;
+    if (imageInfo) imageInfo.textContent = `PDF A4: ${Math.round(viewport.width)} × ${Math.round(viewport.height)} px`;
     fitCanvas();
     draw();
   } catch (err) {
     console.error('Failed to render PDF:', err);
-    imageInfo.textContent = 'Ошибка загрузки';
+    if (imageInfo) imageInfo.textContent = 'Ошибка загрузки';
     showToast('Не удалось загрузить файл', false);
   }
 }
 
 // Draw main canvas
 function draw() {
-  if (!baseCanvas.width || !baseCanvas.height) return;
+  if (!canvas || !ctx || !baseCanvas.width || !baseCanvas.height) return;
 
   // 1. Draw pristine original receipt base
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -242,11 +246,11 @@ function draw() {
 
   let rideLines = [];
   if (isManualRideText) {
-    rideLines = manualRideText.value.split('\n');
+    rideLines = (manualRideText?.value || '').split('\n');
   } else {
-    const d = rideDateInput.value.trim() || '29.08.2026';
-    const t = rideTimeInput.value.trim() || '14:53';
-    const b = busNumberInput.value.trim() || '14';
+    const d = rideDateInput?.value?.trim() || '29.08.2026';
+    const t = rideTimeInput?.value?.trim() || '14:53';
+    const b = busNumberInput?.value?.trim() || '14';
     rideLines = [
       `Оплата поездки от ${d} ${t}, Автобус`,
       `${b}`
@@ -264,13 +268,13 @@ function draw() {
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(302 * S, 168 * S, 180 * S, 15 * S);
 
-  const transferText = transferDateInput.value.trim() || '29.08.2026 11:53:21 мск';
+  const transferText = transferDateInput?.value?.trim() || '29.08.2026 11:53:21 мск';
   ctx.fillStyle = '#000000';
   ctx.font = `${12 * S}px ${fontFam}`;
   ctx.fillText(transferText, 304.75 * S, (841.9 - 664.288) * S);
 
   // 3. СФОРМИРОВАНА (дата вверху справа)
-  if (syncCreatedDate.checked) {
+  if (syncCreatedDate && syncCreatedDate.checked) {
     const createdText = computeCreatedDate(transferText);
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(445 * S, 53 * S, 125 * S, 13 * S);
@@ -284,7 +288,7 @@ function draw() {
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(33 * S, 211 * S, 100 * S, 14 * S);
 
-  const amount = paymentAmountInput.value.trim() || '40';
+  const amount = paymentAmountInput?.value?.trim() || '40';
   const amountText = `${amount} RUR`;
   ctx.fillStyle = '#000000';
   ctx.font = `${12 * S}px ${fontFam}`;
@@ -293,38 +297,50 @@ function draw() {
 
 // Input listeners
 [rideDateInput, rideTimeInput, busNumberInput].forEach(el => {
-  el.addEventListener('input', () => {
+  if (el) {
+    el.addEventListener('input', () => {
+      updateRideText();
+      draw();
+    });
+  }
+});
+
+if (manualRideText) {
+  manualRideText.addEventListener('input', () => {
     updateRideText();
     draw();
   });
-});
+}
 
-manualRideText.addEventListener('input', () => {
-  updateRideText();
-  draw();
-});
+if (transferDateInput) {
+  transferDateInput.addEventListener('input', () => {
+    updateCreatedPreview();
+    draw();
+  });
+}
 
-transferDateInput.addEventListener('input', () => {
-  updateCreatedPreview();
-  draw();
-});
+if (syncCreatedDate) {
+  syncCreatedDate.addEventListener('change', () => {
+    updateCreatedPreview();
+    draw();
+  });
+}
 
-syncCreatedDate.addEventListener('change', () => {
-  updateCreatedPreview();
-  draw();
-});
-
-paymentAmountInput.addEventListener('input', draw);
+if (paymentAmountInput) {
+  paymentAmountInput.addEventListener('input', draw);
+}
 
 // Кнопка: СЕГОДНЯ И СЕЙЧАС (В 1 КЛИК ДЛЯ ПОЕЗДКИ)
-btnRideNowCombined.addEventListener('click', () => {
-  const local = getLocalNow();
-  rideDateInput.value = local.dateStr;
-  rideTimeInput.value = local.timeShortStr;
-  updateRideText();
-  draw();
-  showToast(`Поездка: ${local.dateStr} в ${local.timeShortStr}`);
-});
+if (btnRideNowCombined) {
+  btnRideNowCombined.addEventListener('click', () => {
+    const local = getLocalNow();
+    if (rideDateInput) rideDateInput.value = local.dateStr;
+    if (rideTimeInput) rideTimeInput.value = local.timeShortStr;
+    updateRideText();
+    draw();
+    showToast(`Поездка: ${local.dateStr} в ${local.timeShortStr}`);
+  });
+}
 
 // Кнопка: ВСЁ НА СЕЙЧАС (И ПОЕЗДКА, И ПЕРЕВОД МСК)
 if (btnFillAllNow) {
@@ -334,144 +350,169 @@ if (btnHeaderAllNow) {
   btnHeaderAllNow.addEventListener('click', () => setAllTimesNow(false));
 }
 
-btnToggleManualText.addEventListener('click', () => {
-  isManualRideText = true;
-  manualRideText.value = `Оплата поездки от ${rideDateInput.value} ${rideTimeInput.value}, Автобус\n${busNumberInput.value}`;
-  manualTextContainer.style.display = 'block';
-  quickRideFields.style.display = 'none';
-  updateRideText();
-  draw();
-});
+if (btnToggleManualText) {
+  btnToggleManualText.addEventListener('click', () => {
+    isManualRideText = true;
+    if (manualRideText) {
+      manualRideText.value = `Оплата поездки от ${rideDateInput.value} ${rideTimeInput.value}, Автобус\n${busNumberInput.value}`;
+    }
+    if (manualTextContainer) manualTextContainer.style.display = 'block';
+    if (quickRideFields) quickRideFields.style.display = 'none';
+    updateRideText();
+    draw();
+  });
+}
 
-btnBackToQuick.addEventListener('click', () => {
-  isManualRideText = false;
-  manualTextContainer.style.display = 'none';
-  quickRideFields.style.display = 'block';
-  updateRideText();
-  draw();
-});
+if (btnBackToQuick) {
+  btnBackToQuick.addEventListener('click', () => {
+    isManualRideText = false;
+    if (manualTextContainer) manualTextContainer.style.display = 'none';
+    if (quickRideFields) quickRideFields.style.display = 'block';
+    updateRideText();
+    draw();
+  });
+}
 
 // Кнопка Даты перевода (МОСКОВСКОЕ ВРЕМЯ МСК)
-btnTransferNow.addEventListener('click', () => {
-  const msk = getMoscowNow();
-  transferDateInput.value = msk.fullTransferStr;
-  updateCreatedPreview();
-  draw();
-  showToast(`Время перевода: ${msk.timeFullStr} (МСК)`);
-});
-
-btnResetAmount.addEventListener('click', () => {
-  paymentAmountInput.value = '40';
-  draw();
-  showToast('Сумма: 40 RUR');
-});
-
-// Upload
-btnUpload.addEventListener('click', () => uploadInput.click());
-
-uploadInput.addEventListener('change', async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-
-  if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
-    const arrayBuffer = await file.arrayBuffer();
-    loadPdfDocument(new Uint8Array(arrayBuffer));
-    showToast('PDF загружен!');
-  } else {
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
-        baseCanvas.width = img.naturalWidth;
-        baseCanvas.height = img.naturalHeight;
-        baseCtx.drawImage(img, 0, 0);
-        fitCanvas();
-        draw();
-        showToast('Изображение загружено!');
-      };
-      img.src = event.target.result;
-    };
-    reader.readAsDataURL(file);
-  }
-});
-
-// Reset
-btnReset.addEventListener('click', () => {
-  if (confirm('Сбросить все поля к исходным?')) {
-    rideDateInput.value = '29.08.2026';
-    rideTimeInput.value = '14:53';
-    busNumberInput.value = '14';
-    isManualRideText = false;
-    manualTextContainer.style.display = 'none';
-    quickRideFields.style.display = 'block';
-
-    transferDateInput.value = '29.08.2026 11:53:21 мск';
-    syncCreatedDate.checked = true;
-
-    paymentAmountInput.value = '40';
-
-    updateRideText();
+if (btnTransferNow) {
+  btnTransferNow.addEventListener('click', () => {
+    const msk = getMoscowNow();
+    if (transferDateInput) transferDateInput.value = msk.fullTransferStr;
     updateCreatedPreview();
     draw();
-    showToast('Данные сброшены');
-  }
-});
+    showToast(`Время перевода: ${msk.timeFullStr} (МСК)`);
+  });
+}
+
+if (btnResetAmount) {
+  btnResetAmount.addEventListener('click', () => {
+    if (paymentAmountInput) paymentAmountInput.value = '40';
+    draw();
+    showToast('Сумма: 40 RUR');
+  });
+}
+
+// Upload
+if (btnUpload && uploadInput) {
+  btnUpload.addEventListener('click', () => uploadInput.click());
+
+  uploadInput.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+      const arrayBuffer = await file.arrayBuffer();
+      loadPdfDocument(new Uint8Array(arrayBuffer));
+      showToast('PDF загружен!');
+    } else {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          canvas.width = img.naturalWidth;
+          canvas.height = img.naturalHeight;
+          baseCanvas.width = img.naturalWidth;
+          baseCanvas.height = img.naturalHeight;
+          baseCtx.drawImage(img, 0, 0);
+          fitCanvas();
+          draw();
+          showToast('Изображение загружено!');
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+}
+
+// Reset
+if (btnReset) {
+  btnReset.addEventListener('click', () => {
+    if (confirm('Сбросить все поля к исходным?')) {
+      if (rideDateInput) rideDateInput.value = '29.08.2026';
+      if (rideTimeInput) rideTimeInput.value = '14:53';
+      if (busNumberInput) busNumberInput.value = '14';
+      isManualRideText = false;
+      if (manualTextContainer) manualTextContainer.style.display = 'none';
+      if (quickRideFields) quickRideFields.style.display = 'block';
+
+      if (transferDateInput) transferDateInput.value = '29.08.2026 11:53:21 мск';
+      if (syncCreatedDate) syncCreatedDate.checked = true;
+
+      if (paymentAmountInput) paymentAmountInput.value = '40';
+
+      updateRideText();
+      updateCreatedPreview();
+      draw();
+      showToast('Данные сброшены');
+    }
+  });
+}
 
 // Download PDF
-btnDownloadPdf.addEventListener('click', () => {
-  if (!window.jspdf || !window.jspdf.jsPDF) {
-    showToast('Библиотека jsPDF загружается...', false);
-    return;
-  }
+if (btnDownloadPdf) {
+  btnDownloadPdf.addEventListener('click', () => {
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+      showToast('Библиотека jsPDF загружается...', false);
+      return;
+    }
 
-  const { jsPDF } = window.jspdf;
-  const pdf = new jsPDF({
-    orientation: 'portrait',
-    unit: 'pt',
-    format: [595.28, 841.89] // Standard A4
-  });
-
-  const imgData = canvas.toDataURL('image/jpeg', 0.98);
-  pdf.addImage(imgData, 'JPEG', 0, 0, 595.28, 841.89);
-
-  const rDate = rideDateInput.value.replace(/\./g, '-');
-  const bus = busNumberInput.value.trim();
-  pdf.save(`kvitantsiya_${rDate}_avtobus_${bus}.pdf`);
-
-  showToast('PDF документ скачан!');
-});
-
-// Download PNG
-btnDownloadPng.addEventListener('click', () => {
-  const dataUrl = canvas.toDataURL('image/png', 1.0);
-  const link = document.createElement('a');
-  const rDate = rideDateInput.value.replace(/\./g, '-');
-  const bus = busNumberInput.value.trim();
-  link.download = `kvitantsiya_${rDate}_avtobus_${bus}.png`;
-  link.href = dataUrl;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-
-  showToast('PNG сохранено!');
-});
-
-// Copy to Clipboard
-btnCopyImage.addEventListener('click', () => {
-  canvas.toBlob(async (blob) => {
     try {
-      await navigator.clipboard.write([
-        new ClipboardItem({ 'image/png': blob })
-      ]);
-      showToast('Картинка скопирована!');
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'pt',
+        format: [595.28, 841.89] // Standard A4
+      });
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.98);
+      pdf.addImage(imgData, 'JPEG', 0, 0, 595.28, 841.89);
+
+      const rDate = (rideDateInput?.value || 'kvitantsiya').replace(/\./g, '-');
+      const bus = (busNumberInput?.value || '14').trim();
+      pdf.save(`kvitantsiya_${rDate}_avtobus_${bus}.pdf`);
+
+      showToast('PDF документ скачан!');
     } catch (err) {
       console.error(err);
-      showToast('Нажмите "Скачать PNG"', false);
+      showToast('Ошибка создания PDF, попробуйте Скачать PNG', false);
     }
-  }, 'image/png');
-});
+  });
+}
+
+// Download PNG
+if (btnDownloadPng) {
+  btnDownloadPng.addEventListener('click', () => {
+    const dataUrl = canvas.toDataURL('image/png', 1.0);
+    const link = document.createElement('a');
+    const rDate = (rideDateInput?.value || 'kvitantsiya').replace(/\./g, '-');
+    const bus = (busNumberInput?.value || '14').trim();
+    link.download = `kvitantsiya_${rDate}_avtobus_${bus}.png`;
+    link.href = dataUrl;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    showToast('PNG сохранено!');
+  });
+}
+
+// Copy to Clipboard
+if (btnCopyImage) {
+  btnCopyImage.addEventListener('click', () => {
+    canvas.toBlob(async (blob) => {
+      try {
+        await navigator.clipboard.write([
+          new ClipboardItem({ 'image/png': blob })
+        ]);
+        showToast('Картинка скопирована!');
+      } catch (err) {
+        console.error(err);
+        showToast('Нажмите "Скачать PNG"', false);
+      }
+    }, 'image/png');
+  });
+}
 
 // Zoom Controls
 function setZoom(factor) {
@@ -482,18 +523,18 @@ function setZoom(factor) {
     canvas.style.transform = `scale(${currentZoom})`;
     canvas.style.transformOrigin = 'top center';
   }
-  zoomLabel.textContent = `${Math.round(currentZoom * 100)}%`;
+  if (zoomLabel) zoomLabel.textContent = `${Math.round(currentZoom * 100)}%`;
 }
 
 function fitCanvas() {
   currentZoom = 1.0;
-  canvas.style.transform = 'none';
-  zoomLabel.textContent = '100%';
+  if (canvas) canvas.style.transform = 'none';
+  if (zoomLabel) zoomLabel.textContent = '100%';
 }
 
-zoomInBtn.addEventListener('click', () => setZoom(currentZoom + 0.15));
-zoomOutBtn.addEventListener('click', () => setZoom(currentZoom - 0.15));
-zoomFitBtn.addEventListener('click', fitCanvas);
+if (zoomInBtn) zoomInBtn.addEventListener('click', () => setZoom(currentZoom + 0.15));
+if (zoomOutBtn) zoomOutBtn.addEventListener('click', () => setZoom(currentZoom - 0.15));
+if (zoomFitBtn) zoomFitBtn.addEventListener('click', fitCanvas);
 
 function escapeHtml(str) {
   if (!str) return '';
@@ -506,9 +547,14 @@ function escapeHtml(str) {
 
 window.addEventListener('resize', fitCanvas);
 
-// Init on start: automatically set current time for convenience!
-window.addEventListener('DOMContentLoaded', () => {
-  // Auto-fill current date and time on load
+// Robust Init: Runs immediately if DOM is ready, or on DOMContentLoaded
+function initApp() {
   setAllTimesNow(true);
   loadTemplateImage('receipt_template.png');
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initApp);
+} else {
+  initApp();
+}
